@@ -1,0 +1,171 @@
+<html>
+  <head>
+    <title>How to crop image in round shape by using Cropper.js</title>
+    <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" />
+  </head>
+  <style>
+    .container {
+      margin: 20px auto;
+      max-width: 640px;
+    }
+
+    img {
+      max-width: 100%;
+    }
+
+    .cropper-view-box,
+    .cropper-face {
+      border-radius: 50%;
+    }
+
+    /* The css styles for `outline` do not follow `border-radius` on iOS/Safari (#979). */
+    .cropper-view-box {
+      outline: 0;
+      box-shadow: 0 0 0 1px #39f;
+    }  
+  </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-6">
+          <label onclick="start_cropping()">Browse image</label>
+          <div id="display_image_div">
+            <img name="display_image_data" id="display_image_data" src="download.png" alt="Picture">
+          </div>
+          <input type="hidden" name="cropped_image_data" id="cropped_image_data">
+          <br>
+          <input type="file" name="browse_image" id="browse_image" class="form-control">
+        </div>
+        <div class="col-lg-6">
+          <label>Preview</label>
+          <div id="cropped_image_result">
+            <img style="width: 350px;" src="download.png" />
+          </div>
+          <br>
+          <button type="button" class="btn btn-success" id="crop_button">Crop</button>
+          <button type="button" class="btn btn-danger" id="download_button" onclick = "download()">Download</button>
+          <button type="button" class="btn btn-warning" id="upload_button" onclick = "overlay()">overlay</button>
+        </div>
+      </div>
+      <!--  end row -->
+    </div>
+    <!-- end container -->
+    <!-- these three libraries are must for cropping the photo in the round shape -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+    <script src ="bundle.js"></script>
+    <script>
+      // var Jimp = require('jimp');
+      // import Jimp from 'jimp';
+      $("body").on("change", "#browse_image", function(e) {
+            var files = e.target.files;
+            var done = function(url) {
+              $('#display_image_div').html('');
+              $("#display_image_div").html('<img name = "display_image_data" id="display_image_data" src="'+url+'" alt="Uploaded Picture">');
+            };
+              if (files && files.length > 0) {
+                file = files[0];
+                if (URL) {
+                  done(URL.createObjectURL(file));
+                } else if (FileReader) {
+                  reader = new FileReader();
+                  reader.onload = function(e) {
+                    done(reader.result);
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }
+              var image = document.getElementById('display_image_data');
+              var button = document.getElementById('crop_button');
+              var result = document.getElementById('cropped_image_result');
+              var croppable = false;
+              var cropper = new Cropper(image, {
+                aspectRatio: 1,
+                viewMode: 1,
+                ready: function() {
+                  croppable = true;
+                },
+              });
+              button.onclick = function() {
+                var croppedCanvas;
+                var roundedCanvas;
+                var roundedImage;
+                if (!croppable) {
+                  return;
+                }
+                // Crop
+                croppedCanvas = cropper.getCroppedCanvas();
+                // Round
+                roundedCanvas = getRoundedCanvas(croppedCanvas);
+                // Show
+                roundedImage = document.createElement('img');
+                roundedImage.src = roundedCanvas.toDataURL();
+                
+                result.innerHTML = '';
+                result.appendChild(roundedImage);
+              };
+            });
+    
+          function getRoundedCanvas(sourceCanvas) {
+            var canvas = document.createElement('canvas');
+            var context = canvas.getContext('2d');
+            var width = sourceCanvas.width;
+            var height = sourceCanvas.height;
+            canvas.width = 7395;
+            canvas.height = 7395;
+            context.imageSmoothingEnabled = true;
+            context.drawImage(sourceCanvas, 0, 0, 7395, 7395);
+            context.globalCompositeOperation = 'destination-in';
+            context.beginPath();
+            context.arc(7395 / 2, 7395 / 2, Math.min(7395, 7395) / 2, 0, 2 * Math.PI, true);
+            context.fill();
+            return canvas;
+          }
+          function download() {
+          var linkSource = $('#cropped_image_result img').attr('src');
+          var fileName = 'Nishant.png';
+          const downloadLink = document.createElement("a");
+          downloadLink.href = linkSource;
+          downloadLink.download = fileName;
+          downloadLink.click();
+          }
+          // import Jimp from 'jimp';
+          async function overlay(){
+            console.log("entered");
+            var linkSource = $('#cropped_image_result img').attr('src');
+            // const fixedImage = await Jimp.read('frame (1).png');
+            // const baseImage = await Jimp.read(linkSource);
+            // var temp = document.createElement('img');
+            // finalImage .getBase64(Jimp.MIME_JPEG,function(err, base64) {
+            //     var link = document.createElement('a');
+            //     link.href = base64;
+            //     link.download = 'final_image.jpg';
+            //     link.click();
+            // });
+            // var result = document.getElementById('cropped_image_result');
+            // result.innerHTML = '';
+            // result.appendChild(temp);
+              
+              Jimp.read(linkSource).then(function (image1) {
+              Jimp.read('frame (1).png').then(function (image2) {
+                  image1.composite(image2, 0, 0, function(err, finalImage) {
+                      finalImage.getBase64(Jimp.MIME_JPEG, function(err, base64) {
+                          var link = document.createElement('a');
+                          link.href = base64;
+                          link.download = 'final_image.jpg';
+                          link.click();
+                          console.log(link);
+                      });
+                      
+                  });
+              });
+            });
+          }
+    </script>
+  </body>
+</html>
